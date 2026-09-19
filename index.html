@@ -36,8 +36,8 @@ cus:[{id:'C001',name:'โรงแรมบางกอกการ์เด้�
 mat:[{id:'M001',name:'สุขภัณฑ์นั่งราบ',unit:'ชุด',price:3500,stock:10},{id:'M002',name:'อ่างล้างหน้า',unit:'ชุด',price:1800,stock:8},{id:'M003',name:'ก๊อกน้ำ',unit:'อัน',price:450,stock:30},{id:'M004',name:'ท่อ PVC 1 นิ้ว',unit:'เส้น',price:120,stock:60},{id:'M005',name:'สายฉีดชำระ',unit:'เส้น',price:250,stock:25}],
 sup:[{id:'S001',name:'หจก. ไทยสุขภัณฑ์',addr:'กรุงเทพฯ',tel:'02-555-1111'},{id:'S002',name:'บจก. ประปาภัณฑ์',addr:'นนทบุรี',tel:'02-666-2222'}],
 po:[{id:'PO001',date:today(),sup:'S001',emp:'E002',lines:[{mat:'M001',qty:10,price:3500}]}],gr:[],
-job:[{id:'J001',date:today(),cus:'C001',type:'ทำห้องน้ำ',labor:6000,lines:[{mat:'M001',qty:4,price:3500},{mat:'M003',qty:4,price:450}]}],ins:[]}}
-var db;try{db=JSON.parse(localStorage.getItem(K))}catch(e){}if(!db)db=seed();
+job:[{id:'J001',date:today(),cus:'C001',type:'ทำห้องน้ำ',labor:6000,lines:[{mat:'M001',qty:4,price:3500},{mat:'M003',qty:4,price:450}]}],ins:[],users:[{id:'U001',name:'admin',pass:'1234',role:'พนักงาน',emp:'E001'},{id:'U002',name:'owner',pass:'1234',role:'เจ้าของ',emp:''}]}}
+var db;try{db=JSON.parse(localStorage.getItem(K))}catch(e){}if(!db)db=seed();if(!db.users)db.users=seed().users;var me=null;try{me=db.users.find(function(x){return x.id==sessionStorage.getItem('bc_me')})||null}catch(e){}
 function save(){try{localStorage.setItem(K,JSON.stringify(db))}catch(e){}}
 var M={emp:{t:'พนักงาน',p:'E',f:[['name','ชื่อ-สกุล'],['pos','ตำแหน่ง'],['tel','เบอร์โทร']]},cus:{t:'ลูกค้า',p:'C',f:[['name','ชื่อลูกค้า'],['addr','ที่อยู่'],['tel','เบอร์โทร']]},
 mat:{t:'วัสดุอุปกรณ์',p:'M',f:[['name','ชื่อวัสดุ'],['unit','หน่วย'],['price','ราคา/หน่วย','n'],['stock','คงเหลือ','n']]},sup:{t:'บริษัทสั่งซื้อ',p:'S',f:[['name','ชื่อบริษัท'],['addr','ที่อยู่'],['tel','เบอร์โทร']]}};
@@ -53,15 +53,25 @@ function sum(ls){return ls.reduce(function(a,l){return a+l.qty*l.price},0)}
 function jt(j){return sum(j.lines)+Number(j.labor||0)}function dep(t){return Math.round(t*30)/100}
 function inUse(id){return JSON.stringify([db.po,db.gr,db.job,db.ins]).indexOf('"'+id+'"')>=0}
 function go(k){tab=k;edit=null;render()}
-function render(){$('#tabs').innerHTML=T.map(function(t){return'<button role="tab" aria-selected="'+(t[0]==tab)+'" onclick="go(\''+t[0]+'\')">'+t[1]+'</button>'}).join('');$('#app').innerHTML=V[tab]()}
+function allowed(){return me.role=='เจ้าของ'?['home','rep']:T.map(function(t){return t[0]})}
+function render(){var n=$('#tabs');if(!me){n.innerHTML='';$('#app').innerHTML=loginV();return}var al=allowed();if(al.indexOf(tab)<0)tab='home';
+n.innerHTML=T.filter(function(t){return al.indexOf(t[0])>=0}).map(function(t){return'<button role="tab" aria-selected="'+(t[0]==tab)+'" onclick="go(\''+t[0]+'\')">'+t[1]+'</button>'}).join('')+'<span class="np" style="margin-left:auto;padding:6px 0;font-size:.85rem">ผู้ใช้: '+esc(me.name)+' ('+me.role+') <button onclick="logout()">ออกจากระบบ</button></span>';$('#app').innerHTML=V[tab]()}
+function loginV(){return'<div class="box" style="max-width:380px;margin:40px auto"><h2 style="text-align:center">เข้าสู่ระบบ BC Service</h2><p class="mut" style="text-align:center">ระบบจัดการรับเหมาติดตั้งสุขภัณฑ์</p><label>ชื่อผู้ใช้<input id="lu" autocomplete="username"></label><label style="margin-top:8px">รหัสผ่าน<input id="lp" type="password" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')login()"></label><p><button class="pri" style="width:100%" onclick="login()">เข้าสู่ระบบ</button></p><p class="mut">บัญชีทดลอง<br>admin / 1234 (พนักงาน: ใช้ได้ทุกเมนู)<br>owner / 1234 (เจ้าของบริษัท: ดูหน้าแรกและรายงาน)</p></div>'}
+function login(){var u=db.users.find(function(x){return x.name==$('#lu').value.trim()&&x.pass==$('#lp').value});if(!u)return toast('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');me=u;try{sessionStorage.setItem('bc_me',u.id)}catch(e){}tab='home';render()}
+function logout(){me=null;try{sessionStorage.removeItem('bc_me')}catch(e){}render()}
 function filt(){var q=$('#q').value.toLowerCase();document.querySelectorAll('#tb tr').forEach(function(r,i){if(i)r.style.display=r.textContent.toLowerCase().indexOf(q)>=0?'':'none'})}
 function srch(){return'<p><input id="q" placeholder="ค้นหา..." oninput="filt()"></p>'}
 function tbl(h,rows){return'<div class="scroll"><table id="tb"><tr>'+h.map(function(x){return'<th>'+x+'</th>'}).join('')+'</tr>'+(rows.join('')||'<tr><td colspan="'+h.length+'" class="mut">ยังไม่มีข้อมูล</td></tr>')+'</table></div>'}
 function subs(list,cur,fn){return'<div class="row sub">'+list.map(function(x){return'<button aria-pressed="'+(x[0]==cur)+'" onclick="'+fn+'(\''+x[0]+'\')">'+x[1]+'</button>'}).join('')+'</div>'}
 var V={};
 V.home=function(){var un=db.ins.filter(function(i){return i.status!='ชำระแล้ว'}).reduce(function(a,i){return a+i.remain},0);
-return'<div class="cards">'+[['พนักงาน',db.emp.length],['ลูกค้า',db.cus.length],['วัสดุอุปกรณ์',db.mat.length],['ใบสั่งซื้อ',db.po.length],['ใบเสนอราคา',db.job.length],['ยอดค้างชำระ (บาท)',fmt(un)]].map(function(c){return'<div class="card">'+c[0]+'<b>'+c[1]+'</b></div>'}).join('')+'</div>'+
-'<div class="box" style="margin-top:14px"><h2>ลำดับการใช้งานที่แนะนำ</h2><p>ข้อมูลพื้นฐาน → สั่งซื้อ → รับเข้า (สต็อกเพิ่ม) → จัดจ้าง (พิมพ์ใบเสนอราคา/ใบเสร็จมัดจำ 30%) → ติดตั้งและชำระเงิน → รายงาน</p><p class="mut">มีข้อมูลตัวอย่างให้แล้ว ลองกดแต่ละเมนูได้เลย</p><button onclick="if(confirm(\'ล้างข้อมูลทั้งหมดและกลับเป็นข้อมูลตัวอย่าง?\')){db=seed();save();st={po:{lines:[]},job:{lines:[]},gr:{},ins:{}};go(\'home\')}">รีเซ็ตเป็นข้อมูลตัวอย่าง</button></div>'};
+function t2(a,b){return tbl(a,b).replace(' id="tb"','')}
+var low=db.mat.filter(function(x){return x.stock<10}),unp=db.ins.filter(function(i){return i.status!='ชำระแล้ว'}),rec=db.job.slice(-5).reverse();
+return'<h2>สวัสดี '+esc(me.name)+' ('+me.role+')</h2><div class="cards">'+[['พนักงาน',db.emp.length],['ลูกค้า',db.cus.length],['วัสดุอุปกรณ์',db.mat.length],['ใบสั่งซื้อ',db.po.length],['ใบเสนอราคา',db.job.length],['ยอดค้างชำระ (บาท)',fmt(un)]].map(function(c){return'<div class="card">'+c[0]+'<b>'+c[1]+'</b></div>'}).join('')+'</div>'+
+'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:14px"><div class="box"><h3>วัสดุคงเหลือน้อย (ต่ำกว่า 10)</h3>'+t2(['วัสดุ','คงเหลือ'],low.map(function(x){return'<tr><td>'+esc(x.name)+'</td><td>'+x.stock+' '+esc(x.unit)+'</td></tr>'}))+'</div>'+
+'<div class="box"><h3>งานค้างชำระ</h3>'+t2(['ลูกค้า','งาน','คงเหลือ'],unp.map(function(i){var j=db.job.find(function(x){return x.id==i.job});return'<tr><td>'+esc(nm(db.cus,j.cus))+'</td><td>'+esc(j.type)+'</td><td class="r">'+fmt(i.remain)+'</td></tr>'}))+'</div>'+
+'<div class="box"><h3>ใบเสนอราคาล่าสุด</h3>'+t2(['เลขที่','ลูกค้า','รวม'],rec.map(function(j){return'<tr><td>'+j.id+'</td><td>'+esc(nm(db.cus,j.cus))+'</td><td class="r">'+fmt(jt(j))+'</td></tr>'}))+'</div></div>'+
+(me.role=='พนักงาน'?'<div class="box" style="margin-top:12px"><p><b>ลำดับการใช้งาน:</b> ข้อมูลพื้นฐาน → สั่งซื้อ → รับเข้า (สต็อกเพิ่ม) → จัดจ้าง (ใบเสนอราคา/มัดจำ 30%) → ติดตั้งและชำระเงิน → รายงาน</p><button onclick="if(confirm(\'ล้างข้อมูลทั้งหมดและกลับเป็นข้อมูลตัวอย่าง?\')){db=seed();me=db.users[0];save();st={po:{lines:[]},job:{lines:[]},gr:{},ins:{}};go(\'home\')}">รีเซ็ตเป็นข้อมูลตัวอย่าง</button></div>':'')};
 V.basic=function(){return subs([['emp','พนักงาน'],['cus','ลูกค้า'],['mat','วัสดุอุปกรณ์'],['sup','บริษัทสั่งซื้อ']],sub,'setSub')+master(sub)};
 function setSub(k){sub=k;edit=null;render()}
 function master(k){var c=M[k],e=(edit&&db[k].find(function(x){return x.id==edit}))||{};

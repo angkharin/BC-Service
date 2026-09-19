@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BC Service - ระบบจัดการรับเหมาติดตั้งสุขภัณฑ์</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f8fb;--card:#fff;--ink:#1b2a41;--mut:#5b6b82;--line:#c9d3e0;--acc:#0e7490;--soft:#e4f1f5;--bad:#b42318}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101722;--card:#172131;--ink:#e6edf7;--mut:#9fb0c7;--line:#33455e;--acc:#5cc8e0;--soft:#183342;--bad:#ff8a80}}
+:root[data-theme="dark"]{--bg:#101722;--card:#172131;--ink:#e6edf7;--mut:#9fb0c7;--line:#33455e;--acc:#5cc8e0;--soft:#183342;--bad:#ff8a80}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 Sarabun,"Noto Sans Thai",Tahoma,sans-serif}
+header{padding:18px 20px 6px;max-width:1100px;margin:auto}h1{margin:0;font-size:1.4rem}header p{margin:0;color:var(--mut);font-size:.9rem}
+nav{max-width:1100px;margin:8px auto 0;padding:0 20px;display:flex;gap:2px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+nav button{font:inherit;background:none;border:0;padding:9px 13px;color:var(--mut);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+nav button[aria-selected=true]{color:var(--acc);border-color:var(--acc);font-weight:700}
+main{max-width:1100px;margin:auto;padding:16px 20px 60px}h2{font-size:1.15rem;margin:8px 0}h3{font-size:1rem;margin:16px 0 6px;color:var(--acc)}
+.box{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}label{display:flex;flex-direction:column;font-size:.85rem;color:var(--mut);gap:2px}
+input,select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);max-width:100%}
+button{font:inherit;padding:5px 12px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);cursor:pointer}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc)}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;background:var(--card);margin:6px 0}th,td{border:1px solid var(--line);padding:5px 9px;text-align:left;font-size:.9rem}th{background:var(--soft)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px}.card b{display:block;font-size:1.5rem;color:var(--acc)}
+.sub button[aria-pressed=true]{background:var(--soft);border-color:var(--acc);font-weight:700}.mut{color:var(--mut);font-size:.85rem}.r{text-align:right}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:8px;display:none;z-index:9}
+dialog{border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);max-width:640px;width:92%}
+@media print{body>*:not(dialog){display:none!important}dialog{position:static;border:0;max-width:none;width:100%}.np{display:none}}
+</style></head><body>
+<header><h1>BC Service · ระบบจัดการรับเหมาติดตั้งสุขภัณฑ์</h1><p>ตัวอย่างระบบใช้งานได้จริงตามขอบเขตในโจทย์ ข้อมูลเก็บในเบราว์เซอร์เครื่องนี้</p></header>
+<nav id="tabs" role="tablist"></nav><main id="app"></main><div id="toast"></div>
+<dialog id="dlg"><div id="dlgc"></div><p class="np"><button class="pri" onclick="window.print()">พิมพ์</button> <button onclick="dlg.close()">ปิด</button></p></dialog>
+<script>
+var K='bcservice_v1',$=function(q){return document.querySelector(q)},today=function(){return new Date().toISOString().slice(0,10)};
+function seed(){return{seq:{E:2,C:2,M:5,S:2,PO:1,GR:0,J:1,I:0},
+emp:[{id:'E001',name:'สมชาย ใจดี',pos:'ช่างติดตั้ง',tel:'081-111-1111'},{id:'E002',name:'สุนิสา รักงาน',pos:'ธุรการ',tel:'082-222-2222'}],
+cus:[{id:'C001',name:'โรงแรมบางกอกการ์เด้น',addr:'กรุงเทพฯ',tel:'02-111-2222'},{id:'C002',name:'บริษัท ซันไรส์ จำกัด',addr:'ชลบุรี',tel:'038-333-444'}],
+mat:[{id:'M001',name:'สุขภัณฑ์นั่งราบ',unit:'ชุด',price:3500,stock:10},{id:'M002',name:'อ่างล้างหน้า',unit:'ชุด',price:1800,stock:8},{id:'M003',name:'ก๊อกน้ำ',unit:'อัน',price:450,stock:30},{id:'M004',name:'ท่อ PVC 1 นิ้ว',unit:'เส้น',price:120,stock:60},{id:'M005',name:'สายฉีดชำระ',unit:'เส้น',price:250,stock:25}],
+sup:[{id:'S001',name:'หจก. ไทยสุขภัณฑ์',addr:'กรุงเทพฯ',tel:'02-555-1111'},{id:'S002',name:'บจก. ประปาภัณฑ์',addr:'นนทบุรี',tel:'02-666-2222'}],
+po:[{id:'PO001',date:today(),sup:'S001',emp:'E002',lines:[{mat:'M001',qty:10,price:3500}]}],gr:[],
+job:[{id:'J001',date:today(),cus:'C001',type:'ทำห้องน้ำ',labor:6000,lines:[{mat:'M001',qty:4,price:3500},{mat:'M003',qty:4,price:450}]}],ins:[]}}
+var db;try{db=JSON.parse(localStorage.getItem(K))}catch(e){}if(!db)db=seed();
+function save(){try{localStorage.setItem(K,JSON.stringify(db))}catch(e){}}
+var M={emp:{t:'พนักงาน',p:'E',f:[['name','ชื่อ-สกุล'],['pos','ตำแหน่ง'],['tel','เบอร์โทร']]},cus:{t:'ลูกค้า',p:'C',f:[['name','ชื่อลูกค้า'],['addr','ที่อยู่'],['tel','เบอร์โทร']]},
+mat:{t:'วัสดุอุปกรณ์',p:'M',f:[['name','ชื่อวัสดุ'],['unit','หน่วย'],['price','ราคา/หน่วย','n'],['stock','คงเหลือ','n']]},sup:{t:'บริษัทสั่งซื้อ',p:'S',f:[['name','ชื่อบริษัท'],['addr','ที่อยู่'],['tel','เบอร์โทร']]}};
+var T=[['home','หน้าแรก'],['basic','ข้อมูลพื้นฐาน'],['po','สั่งซื้อ'],['gr','รับเข้า'],['job','จัดจ้าง (ใบเสนอราคา)'],['ins','ติดตั้งและชำระเงิน'],['rep','รายงาน']];
+var tab='home',sub='emp',rsub='basic',edit=null,st={po:{lines:[]},job:{lines:[]},gr:{},ins:{}};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fmt(n){return Number(n).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function nm(l,id){var x=l.find(function(y){return y.id==id});return x?x.name:'-'}
+function nid(p){db.seq[p]=(db.seq[p]||0)+1;return p+String(db.seq[p]).padStart(3,'0')}
+function opt(l,s){return'<option value="">-- เลือก --</option>'+l.map(function(x){return'<option value="'+x.id+'"'+(x.id==s?' selected':'')+'>'+x.id+' '+esc(x.name)+'</option>'}).join('')}
+function toast(m){var t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t.h);t.h=setTimeout(function(){t.style.display='none'},2200)}
+function sum(ls){return ls.reduce(function(a,l){return a+l.qty*l.price},0)}
+function jt(j){return sum(j.lines)+Number(j.labor||0)}function dep(t){return Math.round(t*30)/100}
+function inUse(id){return JSON.stringify([db.po,db.gr,db.job,db.ins]).indexOf('"'+id+'"')>=0}
+function go(k){tab=k;edit=null;render()}
+function render(){$('#tabs').innerHTML=T.map(function(t){return'<button role="tab" aria-selected="'+(t[0]==tab)+'" onclick="go(\''+t[0]+'\')">'+t[1]+'</button>'}).join('');$('#app').innerHTML=V[tab]()}
+function filt(){var q=$('#q').value.toLowerCase();document.querySelectorAll('#tb tr').forEach(function(r,i){if(i)r.style.display=r.textContent.toLowerCase().indexOf(q)>=0?'':'none'})}
+function srch(){return'<p><input id="q" placeholder="ค้นหา..." oninput="filt()"></p>'}
+function tbl(h,rows){return'<div class="scroll"><table id="tb"><tr>'+h.map(function(x){return'<th>'+x+'</th>'}).join('')+'</tr>'+(rows.join('')||'<tr><td colspan="'+h.length+'" class="mut">ยังไม่มีข้อมูล</td></tr>')+'</table></div>'}
+function subs(list,cur,fn){return'<div class="row sub">'+list.map(function(x){return'<button aria-pressed="'+(x[0]==cur)+'" onclick="'+fn+'(\''+x[0]+'\')">'+x[1]+'</button>'}).join('')+'</div>'}
+var V={};
+V.home=function(){var un=db.ins.filter(function(i){return i.status!='ชำระแล้ว'}).reduce(function(a,i){return a+i.remain},0);
+return'<div class="cards">'+[['พนักงาน',db.emp.length],['ลูกค้า',db.cus.length],['วัสดุอุปกรณ์',db.mat.length],['ใบสั่งซื้อ',db.po.length],['ใบเสนอราคา',db.job.length],['ยอดค้างชำระ (บาท)',fmt(un)]].map(function(c){return'<div class="card">'+c[0]+'<b>'+c[1]+'</b></div>'}).join('')+'</div>'+
+'<div class="box" style="margin-top:14px"><h2>ลำดับการใช้งานที่แนะนำ</h2><p>ข้อมูลพื้นฐาน → สั่งซื้อ → รับเข้า (สต็อกเพิ่ม) → จัดจ้าง (พิมพ์ใบเสนอราคา/ใบเสร็จมัดจำ 30%) → ติดตั้งและชำระเงิน → รายงาน</p><p class="mut">มีข้อมูลตัวอย่างให้แล้ว ลองกดแต่ละเมนูได้เลย</p><button onclick="if(confirm(\'ล้างข้อมูลทั้งหมดและกลับเป็นข้อมูลตัวอย่าง?\')){db=seed();save();st={po:{lines:[]},job:{lines:[]},gr:{},ins:{}};go(\'home\')}">รีเซ็ตเป็นข้อมูลตัวอย่าง</button></div>'};
+V.basic=function(){return subs([['emp','พนักงาน'],['cus','ลูกค้า'],['mat','วัสดุอุปกรณ์'],['sup','บริษัทสั่งซื้อ']],sub,'setSub')+master(sub)};
+function setSub(k){sub=k;edit=null;render()}
+function master(k){var c=M[k],e=(edit&&db[k].find(function(x){return x.id==edit}))||{};
+var inp=c.f.map(function(f){return'<label>'+f[1]+'<input id="f_'+f[0]+'"'+(f[2]?' type="number" step="any"':'')+' value="'+esc(e[f[0]]==null?'':e[f[0]])+'"></label>'}).join('');
+return'<div class="box"><h3>'+(e.id?'แก้ไข '+e.id:'เพิ่ม'+c.t)+'</h3><div class="grid">'+inp+'</div><p><button class="pri" onclick="saveM(\''+k+'\')">บันทึก</button> <button onclick="edit=null;render()">ล้างฟอร์ม</button></p></div>'+srch()+
+tbl(['รหัส'].concat(c.f.map(function(f){return f[1]}),['']),db[k].map(function(r){return'<tr><td>'+r.id+'</td>'+c.f.map(function(f){return'<td>'+esc(r[f[0]])+'</td>'}).join('')+'<td><button onclick="edit=\''+r.id+'\';render()">แก้ไข</button> <button onclick="delM(\''+k+'\',\''+r.id+'\')">ลบ</button></td></tr>'}))}
+function saveM(k){var c=M[k],o={};c.f.forEach(function(f){var v=$('#f_'+f[0]).value.trim();o[f[0]]=f[2]?Number(v||0):v});if(!o.name)return toast('กรุณากรอกชื่อ');
+if(edit)Object.assign(db[k].find(function(x){return x.id==edit}),o);else db[k].push(Object.assign({id:nid(c.p)},o));edit=null;save();render();toast('บันทึกแล้ว')}
+function delM(k,id){if(inUse(id))return toast('ลบไม่ได้ มีการใช้งานในเอกสารแล้ว');db[k]=db[k].filter(function(x){return x.id!=id});save();render()}
+/* line builder */
+function lines(kind){var s=st[kind];return tbl(['วัสดุ','จำนวน','ราคา/หน่วย','รวม',''],s.lines.map(function(l,i){return'<tr><td>'+l.mat+' '+esc(nm(db.mat,l.mat))+'</td><td>'+l.qty+'</td><td>'+fmt(l.price)+'</td><td>'+fmt(l.qty*l.price)+'</td><td><button onclick="delL(\''+kind+'\','+i+')">ลบ</button></td></tr>'}))+
+'<div class="row"><select id="'+kind+'_m" onchange="fillP(\''+kind+'\')">'+opt(db.mat)+'</select><input id="'+kind+'_q" type="number" min="1" value="1" style="width:80px"><input id="'+kind+'_p" type="number" step="any" placeholder="ราคา" style="width:110px"><button onclick="addL(\''+kind+'\')">เพิ่มรายการ</button></div>'}
+function fillP(k){var m=db.mat.find(function(x){return x.id==$('#'+k+'_m').value});if(m)$('#'+k+'_p').value=m.price}
+function addL(k){var m=$('#'+k+'_m').value,q=Number($('#'+k+'_q').value),p=Number($('#'+k+'_p').value||(db.mat.find(function(x){return x.id==m})||{}).price);if(!m||q<=0)return toast('เลือกวัสดุและจำนวน');st[k].lines.push({mat:m,qty:q,price:p});render()}
+function delL(k,i){st[k].lines.splice(i,1);render()}
+/* purchase order */
+V.po=function(){var s=st.po;s.date=s.date||today();
+return'<div class="box"><h3>สร้างใบสั่งซื้อ</h3><div class="grid"><label>บริษัทสั่งซื้อ<select onchange="st.po.sup=this.value">'+opt(db.sup,s.sup)+'</select></label><label>พนักงาน<select onchange="st.po.emp=this.value">'+opt(db.emp,s.emp)+'</select></label><label>วันที่<input type="date" value="'+s.date+'" onchange="st.po.date=this.value"></label></div>'+lines('po')+'<p>ราคารวมเบื้องต้น <b>'+fmt(sum(s.lines))+'</b> บาท</p><button class="pri" onclick="savePO()">บันทึกใบสั่งซื้อ</button></div><h3>รายงานการสั่งซื้อ</h3>'+srch()+
+tbl(['เลขที่','วันที่','บริษัท','พนักงาน','รายการ','รวม',''],db.po.map(function(p){return'<tr><td>'+p.id+'</td><td>'+p.date+'</td><td>'+esc(nm(db.sup,p.sup))+'</td><td>'+esc(nm(db.emp,p.emp))+'</td><td>'+p.lines.map(function(l){return esc(nm(db.mat,l.mat))+' x'+l.qty}).join(', ')+'</td><td class="r">'+fmt(sum(p.lines))+'</td><td><button onclick="delDoc(\'po\',\''+p.id+'\')">ลบ</button></td></tr>'}))};
+function savePO(){var s=st.po;if(!s.sup||!s.emp||!s.lines.length)return toast('เลือกบริษัท พนักงาน และเพิ่มรายการ');db.po.push({id:nid('PO'),date:s.date,sup:s.sup,emp:s.emp,lines:s.lines});st.po={lines:[]};save();render();toast('บันทึกใบสั่งซื้อแล้ว')}
+function delDoc(k,id){if(inUse(id))return toast('ลบไม่ได้ มีเอกสารอื่นอ้างอิงอยู่');db[k]=db[k].filter(function(x){return x.id!=id});save();render()}
+/* goods receipt */
+function ords(p){var o={};p.lines.forEach(function(l){o[l.mat]=(o[l.mat]||0)+l.qty});db.gr.filter(function(g){return g.po==p.id}).forEach(function(g){g.lines.forEach(function(l){o[l.mat]-=l.qty})});return Object.keys(o).map(function(m){return{mat:m,left:o[m]}})}
+V.gr=function(){var s=st.gr,p=db.po.find(function(x){return x.id==s.po}),o=p?ords(p):[];s.date=s.date||today();
+return'<div class="box"><h3>บันทึกรับเข้าวัสดุ</h3><div class="grid"><label>ค้นหาใบสั่งซื้อ<select onchange="st.gr.po=this.value;render()">'+opt(db.po.map(function(x){return{id:x.id,name:nm(db.sup,x.sup)}}),s.po)+'</select></label><label>พนักงานผู้รับ<select onchange="st.gr.emp=this.value">'+opt(db.emp,s.emp)+'</select></label><label>วันที่<input type="date" value="'+s.date+'" onchange="st.gr.date=this.value"></label></div>'+
+(p?tbl(['วัสดุ','ค้างรับ','รับครั้งนี้'],o.map(function(l,i){return'<tr><td>'+l.mat+' '+esc(nm(db.mat,l.mat))+'</td><td>'+l.left+'</td><td><input id="r_'+i+'" type="number" min="0" max="'+l.left+'" value="'+l.left+'" style="width:90px"></td></tr>'}))+'<button class="pri" onclick="saveGR()">บันทึกรับเข้า และเพิ่มสต็อก</button>':'<p class="mut">เลือกใบสั่งซื้อที่เคยจัดซื้อไว้</p>')+'</div><h3>รายงานการรับเข้า</h3>'+srch()+
+tbl(['เลขที่','วันที่','ใบสั่งซื้อ','พนักงาน','รายการที่รับ'],db.gr.map(function(g){return'<tr><td>'+g.id+'</td><td>'+g.date+'</td><td>'+g.po+'</td><td>'+esc(nm(db.emp,g.emp))+'</td><td>'+g.lines.map(function(l){return esc(nm(db.mat,l.mat))+' x'+l.qty}).join(', ')+'</td></tr>'}))};
+function saveGR(){var s=st.gr,p=db.po.find(function(x){return x.id==s.po}),o=ords(p),ls=[];if(!s.emp)return toast('เลือกพนักงานผู้รับ');
+for(var i=0;i<o.length;i++){var q=Number($('#r_'+i).value||0);if(q<0||q>o[i].left)return toast('จำนวนรับเกินยอดค้างรับ');if(q>0)ls.push({mat:o[i].mat,qty:q})}
+if(!ls.length)return toast('ยังไม่ได้ระบุจำนวนที่รับ');ls.forEach(function(l){db.mat.find(function(m){return m.id==l.mat}).stock+=l.qty});db.gr.push({id:nid('GR'),date:s.date,po:s.po,emp:s.emp,lines:ls});st.gr={};save();render();toast('รับเข้าแล้ว สต็อกถูกปรับ')}
+/* job / quotation */
+V.job=function(){var s=st.job,t=sum(s.lines)+Number(s.labor||0);s.date=s.date||today();
+return'<div class="box"><h3>สร้างใบเสนอราคาจัดจ้าง</h3><div class="grid"><label>ลูกค้า<select onchange="st.job.cus=this.value">'+opt(db.cus,s.cus)+'</select></label><label>รายการจัดจ้าง<input list="wt" value="'+esc(s.type||'')+'" onchange="st.job.type=this.value" placeholder="เช่น ทำประตู ทำห้องน้ำ"></label><datalist id="wt"><option>ทำประตู</option><option>ทำหน้าต่าง</option><option>ทำห้องน้ำ</option></datalist><label>ค่าแรง (บาท)<input type="number" value="'+(s.labor||'')+'" onchange="st.job.labor=this.value;render()"></label><label>วันที่<input type="date" value="'+s.date+'" onchange="st.job.date=this.value"></label></div>'+lines('job')+
+'<p>รวม <b>'+fmt(t)+'</b> บาท · ค่ามัดจำ 30% <b>'+fmt(dep(t))+'</b> บาท</p><button class="pri" onclick="saveJob()">บันทึกใบเสนอราคา</button></div><h3>รายการจัดจ้าง</h3>'+srch()+
+tbl(['เลขที่','วันที่','ลูกค้า','งาน','รวม','มัดจำ 30%','เอกสาร'],db.job.map(function(j){var t=jt(j);return'<tr><td>'+j.id+'</td><td>'+j.date+'</td><td>'+esc(nm(db.cus,j.cus))+'</td><td>'+esc(j.type)+'</td><td class="r">'+fmt(t)+'</td><td class="r">'+fmt(dep(t))+'</td><td><button onclick="doc(\'quo\',\''+j.id+'\')">ใบเสนอราคา</button> <button onclick="doc(\'dep\',\''+j.id+'\')">ใบเสร็จมัดจำ</button> <button onclick="delDoc(\'job\',\''+j.id+'\')">ลบ</button></td></tr>'}))};
+function saveJob(){var s=st.job;if(!s.cus||!s.type||!s.lines.length)return toast('เลือกลูกค้า ระบุงาน และเพิ่มอุปกรณ์');db.job.push({id:nid('J'),date:s.date,cus:s.cus,type:s.type,labor:Number(s.labor||0),lines:s.lines});st.job={lines:[]};save();render();toast('บันทึกใบเสนอราคาแล้ว')}
+function doc(kind,id){var j=db.job.find(function(x){return x.id==id}),t=jt(j),d=dep(t),i=db.ins.find(function(x){return x.job==id});
+var title={quo:'ใบเสนอราคา',dep:'ใบเสร็จรับเงินค่ามัดจำ 30%',rem:'ใบเสร็จรับเงินส่วนที่เหลือ'}[kind],amt=kind=='dep'?d:kind=='rem'?t-d:t;
+$('#dlgc').innerHTML='<h2>BC Service</h2><p class="mut">รับเหมาติดตั้งสุขภัณฑ์และระบบประปา</p><h3>'+title+'</h3><p>เลขที่งาน '+j.id+' · วันที่ '+j.date+'<br>ลูกค้า: '+esc(nm(db.cus,j.cus))+'<br>งาน: '+esc(j.type)+(i?'<br>ผู้รับผิดชอบติดตั้ง: '+esc(nm(db.emp,i.emp)):'')+'</p>'+
+(kind=='quo'?tbl(['วัสดุ','จำนวน','ราคา','รวม'],j.lines.map(function(l){return'<tr><td>'+esc(nm(db.mat,l.mat))+'</td><td>'+l.qty+'</td><td>'+fmt(l.price)+'</td><td>'+fmt(l.qty*l.price)+'</td></tr>'}))+'<p>ค่าแรง '+fmt(j.labor)+' บาท</p><p>ราคาจัดจ้างรวม '+fmt(t)+' บาท (มัดจำ 30% = '+fmt(d)+' บาท)</p>':'<p>ราคาจัดจ้างรวม '+fmt(t)+' บาท</p><p><b>จำนวนเงินที่รับ '+fmt(amt)+' บาท</b></p>');$('#dlg').showModal()}
+/* installation & payment */
+V.ins=function(){var s=st.ins,free=db.job.filter(function(j){return!db.ins.some(function(i){return i.job==j.id})}),j=db.job.find(function(x){return x.id==s.job}),t=j?jt(j):0;s.date=s.date||today();s.status=s.status||'ยังไม่ชำระ';
+return'<div class="box"><h3>บันทึกการติดตั้งและรับชำระเงิน</h3><div class="grid"><label>ค้นหาใบเสนอราคา<select onchange="st.ins.job=this.value;render()">'+opt(free.map(function(x){return{id:x.id,name:nm(db.cus,x.cus)+' - '+x.type}}),s.job)+'</select></label><label>พนักงานผู้รับผิดชอบ<select onchange="st.ins.emp=this.value">'+opt(db.emp,s.emp)+'</select></label><label>วันที่ติดตั้ง<input type="date" value="'+s.date+'" onchange="st.ins.date=this.value"></label><label>สถานะ<select onchange="st.ins.status=this.value"><option'+(s.status=='ยังไม่ชำระ'?' selected':'')+'>ยังไม่ชำระ</option><option'+(s.status=='ชำระแล้ว'?' selected':'')+'>ชำระแล้ว</option></select></label></div>'+
+(j?'<p>ราคาจัดจ้าง '+fmt(t)+' · มัดจำ '+fmt(dep(t))+' · <b>ค่าใช้จ่ายส่วนที่เหลือ '+fmt(t-dep(t))+' บาท</b></p>':'<p class="mut">เลือกใบเสนอราคาที่ยังไม่ได้ติดตั้ง</p>')+'<button class="pri" onclick="saveIns()">บันทึก</button></div><h3>รายงานการติดตั้งและชำระเงิน</h3>'+srch()+
+tbl(['เลขที่','งาน','ลูกค้า','ผู้รับผิดชอบ','วันที่','คงเหลือ','สถานะ',''],db.ins.map(function(i){var j=db.job.find(function(x){return x.id==i.job});return'<tr><td>'+i.id+'</td><td>'+i.job+' '+esc(j.type)+'</td><td>'+esc(nm(db.cus,j.cus))+'</td><td>'+esc(nm(db.emp,i.emp))+'</td><td>'+i.date+'</td><td class="r">'+fmt(i.remain)+'</td><td><select onchange="setSt(\''+i.id+'\',this.value)"><option'+(i.status=='ยังไม่ชำระ'?' selected':'')+'>ยังไม่ชำระ</option><option'+(i.status=='ชำระแล้ว'?' selected':'')+'>ชำระแล้ว</option></select></td><td><button onclick="doc(\'rem\',\''+i.job+'\')">ใบเสร็จส่วนที่เหลือ</button> <button onclick="delDoc(\'ins\',\''+i.id+'\')">ลบ</button></td></tr>'}))};
+function saveIns(){var s=st.ins,j=db.job.find(function(x){return x.id==s.job});if(!j||!s.emp)return toast('เลือกใบเสนอราคาและพนักงาน');var t=jt(j);db.ins.push({id:nid('I'),job:j.id,emp:s.emp,date:s.date,total:t,deposit:dep(t),remain:t-dep(t),status:s.status});st.ins={};save();render();toast('บันทึกแล้ว')}
+function setSt(id,v){db.ins.find(function(x){return x.id==id}).status=v;save();toast('ปรับสถานะแล้ว')}
+/* reports */
+V.rep=function(){var b=subs([['basic','ข้อมูลพื้นฐาน'],['job','การจัดจ้าง'],['ins','ติดตั้งและชำระเงิน']],rsub,'setR')+'<p class="np"><button onclick="window.print()">พิมพ์รายงาน</button></p>';
+if(rsub=='basic')return b+Object.keys(M).map(function(k){var c=M[k];return'<h3>'+c.t+'</h3>'+tbl(['รหัส'].concat(c.f.map(function(f){return f[1]})),db[k].map(function(r){return'<tr><td>'+r.id+'</td>'+c.f.map(function(f){return'<td>'+esc(r[f[0]])+'</td>'}).join('')+'</tr>'}))}).join('').replace(/id="tb"/g,'');
+if(rsub=='job')return b+srch()+tbl(['เลขที่','วันที่','ลูกค้า','งาน','รวม','มัดจำ'],db.job.map(function(j){var t=jt(j);return'<tr><td>'+j.id+'</td><td>'+j.date+'</td><td>'+esc(nm(db.cus,j.cus))+'</td><td>'+esc(j.type)+'</td><td class="r">'+fmt(t)+'</td><td class="r">'+fmt(dep(t))+'</td></tr>'}))+'<p>รวมมูลค่าจัดจ้างทั้งหมด <b>'+fmt(db.job.reduce(function(a,j){return a+jt(j)},0))+'</b> บาท</p>';
+var paid=db.ins.filter(function(i){return i.status=='ชำระแล้ว'}).reduce(function(a,i){return a+i.remain},0),all=db.ins.reduce(function(a,i){return a+i.remain},0);
+return b+srch()+tbl(['เลขที่','งาน','ผู้รับผิดชอบ','วันที่','คงเหลือ','สถานะ'],db.ins.map(function(i){return'<tr><td>'+i.id+'</td><td>'+i.job+'</td><td>'+esc(nm(db.emp,i.emp))+'</td><td>'+i.date+'</td><td class="r">'+fmt(i.remain)+'</td><td>'+i.status+'</td></tr>'}))+'<p>ชำระแล้ว <b>'+fmt(paid)+'</b> · ค้างชำระ <b>'+fmt(all-paid)+'</b> บาท</p>'};
+function setR(k){rsub=k;render()}
+render();
+</script></body></html>
